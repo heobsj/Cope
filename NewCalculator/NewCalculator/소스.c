@@ -5,9 +5,9 @@
 #include <Windows.h>
 
 #define NUM_THREADS 3
+
 pthread_mutex_t mute;
 
-void (*call_Thread)(void*);
 
 /**  num1, num2, ope, result
   */
@@ -16,6 +16,7 @@ typedef struct _Info {
 	int number2;
 	char ope;
 	int result;
+	double dresult;
 } Info;
 
 
@@ -33,9 +34,13 @@ void script_Number1() {
 void script_Operator() {
 	printf("연산자 입력 필요\n");
 }
+void script_Operator_Error() {
+	printf("연산자 입력 오류\n");
+}
 void script_Number2() {
 	printf("두 번째 숫자 입력 필요\n");
 }
+
 
 /** Input
   */
@@ -74,90 +79,94 @@ int calc_Mul(int num1, int num2) {
 	return num1 * num2;
 }
 double calc_Div(int num1, int num2) {
-	return num1 / num2;
+	return (double)num1 / num2;
 }
 
 
+/** Output
+  */
 void output_Number(int num) {
 	printf("결과		%d\n", num);
 }
-
-
-
-typedef int (*calculate)(int, int);
-void (*call_Thread)(void*);
-
-
-int Calculate(calculate operation, int number1, int number2) {
-	return operation(number1, number2);
+void output_dNumber(double num) {
+	printf("결과		%f\n", num);
 }
 
 
+/** Thread Input
+  */
 void Thread_Input(void* adr) {
 
 	Info* info = (Info*)adr;
 	while (1) {
 		
-		Sleep(500);
+		Sleep(1);								
 
 		pthread_mutex_lock(&mute);
-
 		script_Start();
 		info->number1 = input_Number1();
 		info->ope = input_Operator();
 		info->number2 = input_Number2();
-
 		pthread_mutex_unlock(&mute);
 	}
 
 }
+
+
+/** CallBack
+  */
+typedef int (*calculate)(int, int);
+typedef double (*dcalculate)(int, int);
+int Calculate(calculate operation, int number1, int number2) {
+	return operation(number1, number2);
+}
+double dCalculate(dcalculate operation, int number1, int number2) {
+	return operation(number1, number2);
+}
+
+
+/** Thread Calculation
+  */
 void Thread_Calculation(void* adr) {
 
 	Info* info = (Info*)adr;
 	while (1) {
-		
+		Sleep(30);
 			pthread_mutex_lock(&mute);
-
 			switch (info->ope) {
 			case '+': info->result = Calculate(calc_Add, info->number1, info->number2); break;
 			case '-': info->result = Calculate(calc_Sub, info->number1, info->number2); break;
 			case '*': info->result = Calculate(calc_Mul, info->number1, info->number2); break;
-			case '/': info->result = Calculate(calc_Div, info->number1, info->number2); break;
-			default: Sleep(10);  break;
+			case '/': info->dresult = dCalculate(calc_Div, info->number1, info->number2); break;
+			default: script_Operator_Error(); info->result = 0; info->dresult = 0; break;
 			}
-
 			pthread_mutex_unlock(&mute);
-		
 	}
 }
 
+
+/** Thread Output
+  */
 void Thread_Output(void* adr) {
 
 	Info* info = (Info*)adr;
 	while (1) {
-		if (info->result != 0) {
-
+		Sleep(60);
 			pthread_mutex_lock(&mute);
-
-			output_Number(info->result);
-
+			if ((info->ope)=='/') {
+				output_dNumber(info->dresult);
+			}
+			else {
+				output_Number(info->result);
+			}
 			script_End();
-			info->result = 0;
-			Sleep(1000);
-
 			pthread_mutex_unlock(&mute);
-		}
-		else {
-			Sleep(10);
-		}
 	}
 }
 
 
-
-
-
-
+/** main
+  */
 int main() {
 
 	Info* info = (Info*)malloc(sizeof(Info));
@@ -166,7 +175,7 @@ int main() {
 	info->number2 = 0;
 	info->ope = NULL;
 	info->result = 0;
-	
+	info->dresult = 0;
 
 	pthread_t threads[2];
 	
@@ -178,9 +187,9 @@ int main() {
 
 	pthread_create(&threads[2], NULL, Thread_Output, (void*)info);
 
+	
 	for (int i = 0; i < NUM_THREADS; i++) {
+
 		pthread_join(threads[i], NULL);
 	}
-	
-
 }

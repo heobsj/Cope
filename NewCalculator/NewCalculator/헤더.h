@@ -16,6 +16,7 @@ void script_Start();
 void script_End();
 void script_Number1();
 void script_Operator();
+void script_Operator_Error();
 void script_Number2();
 
 
@@ -37,3 +38,10 @@ double calc_Div(int num1, int num2);
 /** Output
   */
 void output_Number(int num);
+void output_dNumber(double num);
+
+
+/** Function used in callback
+  */
+typedef int (*calculate)(int, int);
+int Calculate(calculate operation, int number1, int number2)
