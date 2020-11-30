@@ -19,9 +19,10 @@ typedef struct _Info {
 	double dresult;
 } Info;
 
+/*
 
-/** Script
-  */
+// Script
+  
 void script_Start() {
 	printf("사칙연산 시작\n");
 }
@@ -42,8 +43,7 @@ void script_Number2() {
 }
 
 
-/** Input
-  */
+//Input 
 int input_Number1() {
 	int num = 0;
 	script_Number1();
@@ -65,6 +65,20 @@ char input_Operator() {
 	getchar();
 	return s;
 }
+
+*/
+
+void script_End() {
+	printf("사칙연산 끝\n\n");
+}
+
+void script_Operator() {
+	printf("연산자 입력 필요\n");
+}
+void script_Operator_Error() {
+	printf("연산자 입력 오류\n");
+}
+
 
 
 /** Calculation
@@ -97,16 +111,36 @@ void output_dNumber(double num) {
   */
 void Thread_Input(void* adr) {
 
+
+	int num1 = 0;
+	char s;
+	int num2 = 0;
+
+
 	Info* info = (Info*)adr;
 	while (1) {
 		
 		Sleep(1);								
 
 		pthread_mutex_lock(&mute);
-		script_Start();
-		info->number1 = input_Number1();
-		info->ope = input_Operator();
-		info->number2 = input_Number2();
+	
+
+		printf("사칙연산 시작\n");
+		printf("[숫자 + 연산 + 숫자]를 입력하세요 : \n");
+
+
+		scanf_s("%d %c %d", &num1, &s,&num2);
+		
+
+
+		
+		
+		info->number1 = num1;
+		info->ope = s;
+		info->number2 = num2;
+		printf("입력 ::  %d %c %d  \n ", num1, s, num2);
+		
+
 		pthread_mutex_unlock(&mute);
 	}
 
@@ -159,6 +193,7 @@ void Thread_Output(void* adr) {
 			else {
 				output_Number(info->result);
 			}
+		
 			script_End();
 			pthread_mutex_unlock(&mute);
 	}
@@ -177,7 +212,7 @@ int main() {
 	info->result = 0;
 	info->dresult = 0;
 
-	pthread_t threads[2];
+	pthread_t threads[3];
 	
 	pthread_mutex_init(&mute, NULL);
 
