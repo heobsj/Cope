@@ -9,7 +9,23 @@
 pthread_mutex_t mute;
 
 
-/**  num1, num2, ope, result
+/** CallBack for int type return
+  */
+typedef int (*calculate)(int, int);
+int Calculate(calculate operation, int number1, int number2) {
+	return operation(number1, number2);
+}
+
+
+/** CallBack for double type return
+  */
+typedef double (*dcalculate)(int, int);
+double dCalculate(dcalculate operation, int number1, int number2) {
+	return operation(number1, number2);
+}
+
+
+/**  num1, num2, ope, result, dresult
   */
 typedef struct _Info {
 	int number1;
@@ -42,7 +58,7 @@ void script_Number2() {
 }
 
 
-/** Input
+/** Input Number1
   */
 int input_Number1() {
 	int num = 0;
@@ -51,6 +67,10 @@ int input_Number1() {
 	getchar();
 	return num;
 }
+
+
+/** Input Number2
+  */
 int input_Number2() {
 	int num = 0;
 	script_Number2();
@@ -58,6 +78,10 @@ int input_Number2() {
 	getchar();
 	return num;
 }
+
+
+/** Input Operator
+  */
 char input_Operator() {
 	script_Operator();
 	char s;
@@ -99,7 +123,6 @@ void Thread_Input(void* adr) {
 
 	Info* info = (Info*)adr;
 	while (1) {
-		
 		Sleep(1);								
 
 		pthread_mutex_lock(&mute);
@@ -113,18 +136,6 @@ void Thread_Input(void* adr) {
 }
 
 
-/** CallBack
-  */
-typedef int (*calculate)(int, int);
-typedef double (*dcalculate)(int, int);
-int Calculate(calculate operation, int number1, int number2) {
-	return operation(number1, number2);
-}
-double dCalculate(dcalculate operation, int number1, int number2) {
-	return operation(number1, number2);
-}
-
-
 /** Thread Calculation
   */
 void Thread_Calculation(void* adr) {
@@ -132,6 +143,7 @@ void Thread_Calculation(void* adr) {
 	Info* info = (Info*)adr;
 	while (1) {
 		Sleep(30);
+
 			pthread_mutex_lock(&mute);
 			switch (info->ope) {
 			case '+': info->result = Calculate(calc_Add, info->number1, info->number2); break;
@@ -152,6 +164,7 @@ void Thread_Output(void* adr) {
 	Info* info = (Info*)adr;
 	while (1) {
 		Sleep(60);
+
 			pthread_mutex_lock(&mute);
 			if ((info->ope)=='/') {
 				output_dNumber(info->dresult);
@@ -182,9 +195,7 @@ int main() {
 	pthread_mutex_init(&mute, NULL);
 
 	pthread_create(&threads[0], NULL, Thread_Input, (void*)info);
-
 	pthread_create(&threads[1], NULL, Thread_Calculation, (void*)info);
-
 	pthread_create(&threads[2], NULL, Thread_Output, (void*)info);
 
 	
@@ -192,4 +203,8 @@ int main() {
 
 		pthread_join(threads[i], NULL);
 	}
+
+	pthread_mutex_destroy(&mute);
+	pthread_exit(NULL);
+
 }
